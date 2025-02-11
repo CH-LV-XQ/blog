@@ -263,3 +263,28 @@ opener = urllib.request.build_opener(handler)
 response = opener.open(request)
 print(response.read().decode('utf-8'))
 ```
+
+### 代理
+```python
+# 使用代理IP来访问百度 获取网页源码
+# 快代理(https://www.kuaidaili.com/free/):免费代理
+import urllib.request
+url='http://www.baidu.com/s?wd=ip'
+headers = {
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+}
+
+request = urllib.request.Request(url=url,headers=headers)
+proxies = {
+    'http': '47.121.183.107:8443',
+}
+# (1)获取handler对象
+handler = urllib.request.ProxyHandler(proxies=proxies)
+# (2)获取opener对象
+opener = urllib.request.build_opener(handler)
+# (3)调用opener方法
+response = opener.open(request)
+content = response.read().decode('utf-8')
+with open('proxy.html','w',encoding='utf-8') as fp:
+    fp.write(content)
+```
