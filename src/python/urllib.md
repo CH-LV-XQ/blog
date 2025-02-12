@@ -5,6 +5,7 @@ category:
   - Python
 tag:
   - UrlLib
+  - Python 爬虫
 star: true
 ---
 
@@ -286,5 +287,35 @@ opener = urllib.request.build_opener(handler)
 response = opener.open(request)
 content = response.read().decode('utf-8')
 with open('proxy.html','w',encoding='utf-8') as fp:
+    fp.write(content)
+```
+
+### 代理池
+```python
+import urllib.request
+import random
+
+proxies_pool = [
+    {'http': '47.121.183.107:8443'},
+    {'http': '47.121.183.107:8444'},
+    {'http': '47.121.183.107:8445'},
+    {'http': '47.121.183.107:8445'}
+]
+url='http://www.baidu.com/s?wd=ip'
+headers = {
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+}
+
+request = urllib.request.Request(url=url,headers=headers)
+# 随机数从代理池获取代理地址
+proxies = random.choice(proxies_pool)
+# (1)获取handler对象
+handler = urllib.request.ProxyHandler(proxies=proxies)
+# (2)获取opener对象
+opener = urllib.request.build_opener(handler)
+# (3)调用opener方法
+response = opener.open(request)
+content = response.read().decode('utf-8')
+with open('proxy_pool.html','w',encoding='utf-8') as fp:
     fp.write(content)
 ```
