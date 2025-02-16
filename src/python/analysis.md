@@ -16,12 +16,15 @@ tag:
 
 ### Xpath Helper 安装
 ```text
-1、打开chrome浏览器
-2、打开扩展程序
-3、在Chorme商店搜索安装Xpath Helper
-4、安装成功后重新启动chorme浏览器
-5、打开网页执行快捷键Ctrt + Shift + X运行
-6、顶部出现小黑框，证明安装成功
+作用：
+	在网页直接定位测试编写的表达式是否正确
+安装方式：
+	1、打开chrome浏览器
+	2、打开扩展程序
+	3、在Chorme商店搜索安装Xpath Helper
+	4、安装成功后重新启动chorme浏览器
+	5、打开网页执行快捷键Ctrt + Shift + X运行
+	6、顶部出现小黑框，证明安装成功
 ```
 ### xpath依赖下载及使用步骤
 ```text
@@ -147,7 +150,80 @@ print(or_li_list)
 ```
 ```python
 # xpath 解析服务器响应文件 response.read().decode('utf-8')
+import urllib.request
+from lxml import etree
+url='http://www.baidu.com'
+headers = {
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+}
 
+request = urllib.request.Request(url=url,headers=headers)
+response = urllib.request.urlopen(request)
+content = response.read().decode('utf-8')
+tree = etree.HTML(content)
+
+# 获取想要的数据 百度一下 四个字  xpath返回值是一个数组列表
+result = tree.xpath('//input[@id="su"]/@value')[0]
+print(result)
+
+# 输出结果  百度一下
+```
+
+案例：站长前10页图片
+```python
+import urllib.request
+from lxml import etree
+# 需求 下载的前十页的图片
+# https://sc.chinaz.com/tupian/qinglvtupian.html       第一页数据
+# https://sc.chinaz.com/tupian/qinglvtupian_2.html     第二页数据
+# # https://sc.chinaz.com/tupian/qinglvtupian_3.html   第三页数据
+
+# (1)请求对象定制
+def create_request(page):
+	if(page == 1):
+		url = 'https://sc.chinaz.com/tupian/qinglvtupian.html'
+	else:
+		url = 'https://sc.chinaz.com/tupian/qinglvtupian' + str(page) + '.html'
+		
+	headers = {
+	    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+	}
+	request = urllib.request.Request(url = url, headers=headers)
+	return request
+# (2)获取响应数据
+def get_content(request):
+    response = urllib.request.urlopen(request)
+    content = response.read().decode('utf-8')
+    return content
+
+# (3) 下载
+def down_load(content):
+	p
+	# 下载图片
+	# urllib.request.urlretrieve（'图片地址’，‘文件的名字"）
+	tree = etree.HTML(content)
+	name_list = tree. xpath('//div[@id="container"]//a/img/@alt')
+	# 一般涉及到图片的网站都会进行懒加载 路径名默认src2，只有展示的时候才会变为src
+	src_list = tree. xpath('//div[@id="container"]//a/img/@src2')
+	print(len(name_list))
+	for i in range(len(name_list)):
+		name = name_list[i]
+		src = src_list[i]
+		url = 'https:' + src
+		# 图片保存路径如果需要设置文件夹，则拼接即可 如：'./img/' + name + '.jpg'
+		urllib.request.urlretrieve(url = url,filename = './img/' + name + '.jpg')
+
+# 程序入口
+if __name__ == '__main__':
+    start_page = int(input('请输入起始页数'))
+    end_page = int(input('请输入结束页数'))
+	for page in range(start_page, end_page + 1):
+		# (1) 请求对象定制
+		request = create_request(page)
+		# (2) 获取网页源码
+		content = get_content(request)
+		# (3) 下载
+		down_load(content)
 ```
 ## JsonPath
 ## BeautifulSoup
