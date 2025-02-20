@@ -6,11 +6,10 @@ category:
 tag:
   - Python 爬虫
   - Xpath
-  - JsonPath
   - BeautifulSoup
 ---
 
-# 爬虫解析
+# 爬虫解析——Xpath
 
 ## Xpath
 
