@@ -67,16 +67,16 @@ services:
 docker-compose up -d
 ```
 第四步：运行
-在浏览器中输入 http://127.0.0.1:3333。
+在浏览器中输入 [http://127.0.0.1:3333](http://127.0.0.1:3333)。
 第一次会显示管理员设置界面，输入需要设置的管理员账号和密码即可，设置完成后，会进入主界面。
 ![img.png](images/coolmonitor/login-img.png)
 
 
 **Coolmonitor 支持的监控类型**
-* <font color="red"><b>TTP/HTTPS网站监控：</b></font>检查网站可用性和响应时间
+* <font color="red"><b>HTTP/HTTPS网站监控：</b></font>检查网站可用性和响应时间
 * <font color="red"><b>HTTPS证书监控：</b></font>检查 SSL 证书过期时间，提前预警
 * <font color="red"><b>关键词监控：</b></font>检查网页内容是否包含特定关键词
 * <font color="red"><b>TCP端口监控：</b></font>检查端口是否开放
 * <font color="red"><b>MySQL/MariaDB数据库监控：</b></font>检查数据库连接和基本查询
 ## 参考文档
-https://github.com/star7th/coolmonitor
+[文档地址](https://github.com/star7th/coolmonitor)
