@@ -8,10 +8,20 @@ tag:
 ---
 # 解决Docker 容器日志占用空间大问题
 
+## 查看 Docker 数据目录（镜像、容器存储位置）
+```shell
+docker info | grep "Docker Root Dir"
 
+# 输出示例
+Docker Root Dir: /var/lib/docker
+```
 ## 步骤一：快速定位哪个容器导致日志暴涨
 ```shell
 docker ps -a | grep <container-id>
+
+# 或者直接在容器目录查看文件夹占用大小
+# 根据输出的文件夹占用大小定位容器
+du -h
 ```
 或者查看日志路径对应的容器：
 ```shell
