@@ -27,7 +27,7 @@ vim /etc/profile
 ```
 （2）在末尾添加
 ```shell
-export JAVA_HOME=/usr/local/java/jdk1.8.0_171
+export JAVA_HOME=/usr/local/java/jdk1.8.0_451
 export JRE_HOME=${JAVA_HOME}/jre
 export CLASSPATH=.:${JAVA_HOME}/lib:${JRE_HOME}/lib
 export PATH=${JAVA_HOME}/bin:$PATH
@@ -38,7 +38,7 @@ source /etc/profile
 ```
 （4）添加软链接
 ```shell
-ln -s /usr/local/java/jdk1.8.0_171/bin/java /usr/bin/java
+ln -s /usr/local/java/jdk1.8.0_451/bin/java /usr/bin/java
 ```
 （5）测试
 ```shell
