@@ -2,9 +2,7 @@
 icon: pen-to-square
 date: 2022-01-09
 category:
-  - 樱桃
-tag:
-  - 红
+  - Nginx
 ---
 
 # Nginx从安装到高可用，一篇搞定！
