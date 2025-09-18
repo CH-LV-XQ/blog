@@ -36,33 +36,160 @@ Harbor 是一个开源的企业级 Docker 镜像仓库管理工具，专为云�
 * 开源免费
 
   完全开源，拥有活跃的社区支持。
- 
+
 Harbor 是企业级镜像管理的理想选择，特别适合需要高安全性和多租户支持的环境。
 ### 2、Harbor下载
 [下载地址](https://github.com/goharbor/harbor/releases)
+
 ## 部署步骤
 这个配置使用了 Harbor v2.8.0 版本，你可以根据需要修改为最新版本。部署完成后，你就可以使用这个私有 Docker 镜像仓库来管理你的容器镜像了。
 ### 1、准备环境：
 * 确保已安装 Docker 和 Docker Compose
-* 创建必要的目录结构：
-```shell
-mkdir -p /data/{database,registry,redis,secret}
-mkdir -p ./common/config/{log,registry,db,core,nginx,registryctl,shared/trust-certificates}
-```
+* 下载Harbor官方安装包
+
+  * 访问Harbor官方下载界面：[下载地址](https://github.com/goharbor/harbor/releases)
+
+  * 选择适合的版本（推荐稳定版，如 `v2.8.4`），下载离线安装包（格式为 `harbor-offline-installer-<版本>.tgz`）：
+
+    ```shell
+    # 示例：下载 v2.8.4 版本（请替换为最新版本链接）
+    wget https://github.com/goharbor/harbor/releases/download/v2.8.4/harbor-offline-installer-v2.8.4.tgz
+    ```
+
+* 解压安装包并生成配置文件
+
+  * 解压安装包：
+
+    ```shell
+    tar zxvf harbor-offline-installer-<版本>.tgz
+    # 样例
+    [root@localhost Harbor]# tar zxvf harbor-offline-installer-v2.12.2.tgz 
+    harbor/harbor.v2.12.2.tar.gz
+    harbor/prepare
+    harbor/LICENSE
+    harbor/install.sh
+    harbor/common.sh
+    harbor/harbor.yml.tmpl
+    ```
+
+  * 复制配置模板并修改（核心步骤）：
+
+    ```shell
+    # 进入解压后的文件目录
+    cd harbor
+    # 复制默认配置模板
+    cp harbor.yml.tmpl harbor.yml
+    
+    # 编辑配置文件（根据需求修改）
+    vim harbor.yml
+    ```
+
+    ```yaml
+     # 配置访问的IP，为部署的机器的IP
+    hostname: 192.168.9.921
+    # 配置方位的端口
+    port: 9191
+    # 配置admin用户的密码（默认的管理员用户名为 admin，管理员密码为 Harbor12345）
+    # 不用修改（也没有修改的地方）管理员用户名，可以修改管理员密码，如下
+    harbor_admin_password: 123456
+    # 配置数据卷地址，为机器上的目录（用于挂载到容器中）
+    data_volume: /data/harbor
+    # 注释https（13行），主要是我们在局域网内，不需要一些需要注册的域名
+    # https related config
+    #https:
+      # https port for harbor, default is 443
+      # port: 443
+      # The path of cert and key files for nginx
+      # certificate: /your/certificate/path
+      # private_key: /your/private/key/path
+      # enable strong ssl ciphers (default: false)
+       # strong_ssl_ciphers: false
+    ```
+
+    需修改的关键配置（根据实际环境调整）：
+
+    - `hostname`: Harbor 服务器的 IP 或域名（必填）
+    - `http.port`: HTTP 端口（默认 80）
+    - `https`: 如需启用 HTTPS，需配置证书路径（可选）
+    - `data_volume`: 数据存储目录（默认 `/data`，建议保持默认）
+    - `admin_password`: 管理员初始密码（默认 `Harbor12345`）
+
+* 执行准备脚本生成依赖文件
+
+  Harbor 提供了 `prepare` 脚本，会根据 `harbor.yml` 自动生成所有必要的配置文件（包括 `docker-compose.yml` 和挂载所需的各类配置）：
+
+  ```shell
+  # 生成配置文件（会自动创建 common/config 目录及内部文件）
+  ./prepare
+  ```
+
+  执行后，会自动生成：
+
+  - 完整的 `docker-compose.yml`（无需手动编写）
+  - `common/config` 目录（包含 Nginx、数据库、Core 等服务的配置文件）
+  - 证书相关目录（如需 HTTPS）
+
+* 启动 Harbor
+
+  此时所有挂载文件已自动生成，直接通过官方脚本启动：
+
+  ```shell
+  # 第一次启动
+   # 安装，启动 执行此步骤可以检验环境等
+   ./install.sh
+   # 检查是否成功
+   docker-compose ps -a
+  
+  
+  # 启动所有服务
+  docker-compose up -d
+  
+  # 检查启动状态
+  docker-compose ps
+  ```
+
+  在install.sh执行结束后，出现以下标识，成功。
+
+  ```tex
+   
+  Note: stopping existing Harbor instance ...
+  
+  
+  [Step 5]: starting Harbor ...
+  [+] Running 10/10
+   ✔ Network harbor_harbor        Created   0.0s 
+   ✔ Container harbor-log         Started   0.7s 
+   ✔ Container harbor-portal      Started   0.8s 
+   ✔ Container redis              Started   0.8s 
+   ✔ Container registryctl        Started   0.8s 
+   ✔ Container harbor-db          Started   0.8s 
+   ✔ Container registry           Started   0.7s 
+   ✔ Container harbor-core        Started   1.0s 
+   ✔ Container harbor-jobservice  Started   1.1s 
+   ✔ Container nginx              Started   1.1s 
+   ✔ ----Harbor has been installed and started successfully.----
+  ```
 
 ### 2、配置 Harbor：
+
 * 修改 docker-compose.yml 中的配置，如端口映射、数据存储路径等
 * 默认用户名是 admin，密码是 Harbor12345
 ```yaml
 version: '2.3'
-
 services:
   log:
-    image: goharbor/harbor-log:v2.8.0
+    image: goharbor/harbor-log:v2.8.4
     container_name: harbor-log
     restart: always
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - SETGID
+      - SETUID
     volumes:
-      - /var/log/harbor:/var/log/docker/harbor
+      - /var/log/harbor/:/var/log/docker/:z
       - type: bind
         source: ./common/config/log/logrotate.conf
         target: /etc/logrotate.d/logrotate.conf
@@ -73,19 +200,22 @@ services:
       - 127.0.0.1:1514:10514
     networks:
       - harbor
-    environment:
-      - ROTATE_LOGS=true
-      - LOG_LEVEL=info
-    cap_drop:
-      - ALL
-
   registry:
-    image: goharbor/registry-photon:v2.8.0
+    image: goharbor/registry-photon:v2.8.4
     container_name: registry
     restart: always
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
     volumes:
-      - /data/registry:/storage
-      - ./common/config/registry/:/etc/registry/
+      - /data/harbor/registry:/storage:z
+      - ./common/config/registry/:/etc/registry/:z
+      - type: bind
+        source: /data/harbor/secret/registry/root.crt
+        target: /etc/registry/root.crt
       - type: bind
         source: ./common/config/shared/trust-certificates
         target: /harbor_cust_cert
@@ -96,38 +226,42 @@ services:
     logging:
       driver: "syslog"
       options:
-        syslog-address: "tcp://127.0.0.1:1514"
+        syslog-address: "tcp://localhost:1514"
         tag: "registry"
-    environment:
-      - GODEBUG=netdns=cgo
+  registryctl:
+    image: goharbor/harbor-registryctl:v2.8.4
+    container_name: registryctl
+    env_file:
+      - ./common/config/registryctl/env
+    restart: always
     cap_drop:
       - ALL
     cap_add:
       - CHOWN
       - SETGID
       - SETUID
-      - DAC_OVERRIDE
-
+    volumes:
+      - /data/harbor/registry:/storage:z
+      - ./common/config/registry/:/etc/registry/:z
+      - type: bind
+        source: ./common/config/registryctl/config.yml
+        target: /etc/registryctl/config.yml
+      - type: bind
+        source: ./common/config/shared/trust-certificates
+        target: /harbor_cust_cert
+    networks:
+      - harbor
+    depends_on:
+      - log
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "tcp://localhost:1514"
+        tag: "registryctl"
   postgresql:
-    image: goharbor/harbor-db:v2.8.0
+    image: goharbor/harbor-db:v2.8.4
     container_name: harbor-db
     restart: always
-    volumes:
-      - /data/database:/var/lib/postgresql/data
-      - ./common/config/db/:/var/lib/postgresql/data/pg_hba.conf.d/
-    networks:
-      - harbor
-    depends_on:
-      - log
-    logging:
-      driver: "syslog"
-      options:
-        syslog-address: "tcp://127.0.0.1:1514"
-        tag: "postgresql"
-    environment:
-      - POSTGRES_PASSWORD=root123
-      - POSTGRES_USER=postgres
-      - POSTGRES_DB=registry
     cap_drop:
       - ALL
     cap_add:
@@ -135,109 +269,63 @@ services:
       - DAC_OVERRIDE
       - SETGID
       - SETUID
-
-  redis:
-    image: goharbor/redis-photon:v2.8.0
-    container_name: redis
-    restart: always
     volumes:
-      - /data/redis:/data
+      - /data/harbor/database:/var/lib/postgresql/data:z
     networks:
-      - harbor
+      harbor:
+    env_file:
+      - ./common/config/db/env
     depends_on:
       - log
     logging:
       driver: "syslog"
       options:
-        syslog-address: "tcp://127.0.0.1:1514"
-        tag: "redis"
+        syslog-address: "tcp://localhost:1514"
+        tag: "postgresql"
+    shm_size: '1gb'
+  core:
+    image: goharbor/harbor-core:v2.8.4
+    container_name: harbor-core
+    env_file:
+      - ./common/config/core/env
+    restart: always
     cap_drop:
       - ALL
     cap_add:
       - SETGID
       - SETUID
-      - DAC_OVERRIDE
-
-  core:
-    image: goharbor/harbor-core:v2.8.0
-    container_name: harbor-core
-    restart: always
     volumes:
-      - /data/secret:/etc/secrets
-      - /data:/data
-      - ./common/config/core/app.conf:/etc/core/app.conf
-      - ./common/config/core/private_key.pem:/etc/core/private_key.pem
-      - ./common/config/core/certificates/:/etc/core/certificates/
+      - /data/harbor/ca_download/:/etc/core/ca/:z
+      - /data/harbor/:/data/:z
+      - ./common/config/core/certificates/:/etc/core/certificates/:z
+      - type: bind
+        source: ./common/config/core/app.conf
+        target: /etc/core/app.conf
+      - type: bind
+        source: /data/harbor/secret/core/private_key.pem
+        target: /etc/core/private_key.pem
+      - type: bind
+        source: /data/harbor/secret/keys/secretkey
+        target: /etc/core/key
       - type: bind
         source: ./common/config/shared/trust-certificates
         target: /harbor_cust_cert
     networks:
-      - harbor
+      harbor:
     depends_on:
       - log
       - registry
-      - postgresql
       - redis
+      - postgresql
     logging:
       driver: "syslog"
       options:
-        syslog-address: "tcp://127.0.0.1:1514"
+        syslog-address: "tcp://localhost:1514"
         tag: "core"
-    environment:
-      - GODEBUG=netdns=cgo
-      - DB_USR=postgres
-      - DB_PWD=root123
-      - DB_NAME=registry
-      - DB_HOST=postgresql
-      - DB_PORT=5432
-      - REDIS_URL=redis:6379
-      - REGISTRY_URL=http://registry:5000
-      - REGISTRY_CONTROLLER_URL=http://registryctl:8080
-      - LOG_LEVEL=info
-    cap_drop:
-      - ALL
-    cap_add:
-      - SETGID
-      - SETUID
-      - DAC_OVERRIDE
-
   portal:
-    image: goharbor/harbor-portal:v2.8.0
+    image: goharbor/harbor-portal:v2.8.4
     container_name: harbor-portal
     restart: always
-    networks:
-      - harbor
-    depends_on:
-      - log
-    logging:
-      driver: "syslog"
-      options:
-        syslog-address: "tcp://127.0.0.1:1514"
-        tag: "portal"
-
-  nginx:
-    image: goharbor/nginx-photon:v2.8.0
-    container_name: nginx
-    restart: always
-    volumes:
-      - ./common/config/nginx:/etc/nginx
-      - type: bind
-        source: ./common/config/shared/trust-certificates
-        target: /harbor_cust_cert
-    networks:
-      - harbor
-    ports:
-      - 80:8080
-      - 443:8443
-    depends_on:
-      - registry
-      - core
-      - portal
-    logging:
-      driver: "syslog"
-      options:
-        syslog-address: "tcp://127.0.0.1:1514"
-        tag: "nginx"
     cap_drop:
       - ALL
     cap_add:
@@ -245,58 +333,149 @@ services:
       - SETGID
       - SETUID
       - NET_BIND_SERVICE
-      - DAC_OVERRIDE
-
-  registryctl:
-    image: goharbor/harbor-registryctl:v2.8.0
-    container_name: registryctl
-    restart: always
     volumes:
-      - /data/registry:/storage:shared
-      - ./common/config/registry/:/etc/registry/
-      - ./common/config/registryctl:/etc/registryctl/
       - type: bind
-        source: ./common/config/shared/trust-certificates
-        target: /harbor_cust_cert
+        source: ./common/config/portal/nginx.conf
+        target: /etc/nginx/nginx.conf
     networks:
       - harbor
     depends_on:
       - log
-      - registry
     logging:
       driver: "syslog"
       options:
-        syslog-address: "tcp://127.0.0.1:1514"
-        tag: "registryctl"
-    environment:
-      - REGISTRY_HTTP_ADDR=registry:5000
-      - REGISTRY_CONTROLLER_URL=http://registryctl:8080
+        syslog-address: "tcp://localhost:1514"
+        tag: "portal"
+
+  jobservice:
+    image: goharbor/harbor-jobservice:v2.8.4
+    container_name: harbor-jobservice
+    env_file:
+      - ./common/config/jobservice/env
+    restart: always
     cap_drop:
       - ALL
     cap_add:
       - CHOWN
       - SETGID
       - SETUID
-      - DAC_OVERRIDE
-
+    volumes:
+      - /data/harbor/job_logs:/var/log/jobs:z
+      - type: bind
+        source: ./common/config/jobservice/config.yml
+        target: /etc/jobservice/config.yml
+      - type: bind
+        source: ./common/config/shared/trust-certificates
+        target: /harbor_cust_cert
+    networks:
+      - harbor
+    depends_on:
+      - core
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "tcp://localhost:1514"
+        tag: "jobservice"
+  redis:
+    image: goharbor/redis-photon:v2.8.4
+    container_name: harborRedis
+    restart: always
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+    volumes:
+      - /data/harbor/redis:/var/lib/redis
+    networks:
+      harbor:
+    depends_on:
+      - log
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "tcp://localhost:1514"
+        tag: "redis"
+  proxy:
+    image: goharbor/nginx-photon:v2.8.4
+    container_name: nginx
+    restart: always
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+      - NET_BIND_SERVICE
+    volumes:
+      - ./common/config/nginx:/etc/nginx:z
+      - type: bind
+        source: ./common/config/shared/trust-certificates
+        target: /harbor_cust_cert
+    networks:
+      - harbor
+    ports:
+      - 9191:8080
+    depends_on:
+      - registry
+      - core
+      - portal
+      - log
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "tcp://localhost:1514"
+        tag: "proxy"
 networks:
   harbor:
     external: false
-    
 ```
-### 3、启动 Harbor：
-```shell
-docker-compose up -d
-```
-### 4、验证部署：
+### 3、验证部署：
 * 检查所有容器是否正常运行：docker-compose ps 
 * 通过浏览器访问 Harbor 界面：http://your-server-ip 或 https://your-server-ip
 
-### 5、停止 Harbor
+### 4、停止 Harbor
 ```shell
 docker-compose down
 ```
+## 配置docker服务
+
+为了能够通过 IP:port 能够在局域网内访问，需要配置docker服务。
+
+### 1、修改镜像仓库配置文件
+
+```shell
+vim /etc/docker/daemon.json
+# 修改如下内容
+{
+    # 新增你的仓库地址
+    "insecure-registries": ["192.168.1.100:9191"]
+ }
+```
+
+### 2、重启 docker
+
+```shell
+# 重启docker
+systemctl daemon-reload
+systemctl restart docker
+```
+
+### 3、命令行登录
+
+```shell
+ # docker 登录方式
+ docker login 192.168.9.921:9191
+ 
+ # 或者使用账号密码登录 
+ docker login -uadmin -p123456 192.168.9.921:9191
+```
+
+
+
 ## 镜像上传
+
 Harbor Web 界面是管理平台，负责仓库配置和镜像信息展示；而镜像的上传 / 下载等操作需要通过Docker 客户端完成。两者配合使用才能实现完整的镜像管理流程。
 ### 1、通过 Docker 客户端上传镜像：
 ```shell
@@ -304,6 +483,7 @@ Harbor Web 界面是管理平台，负责仓库配置和镜像信息展示；而
 docker login <harbor服务器地址>
 
 # 2. 给本地镜像打标签（格式：harbor地址/项目名/镜像名:版本）
+# docker tag mysql:8.0.40 192.168.1.100:9191/common/mysql:8.0.40
 docker tag <本地镜像名:版本> <harbor服务器地址>/<项目名>/<镜像名:版本>
 
 # 3. 上传镜像到 Harbor
@@ -318,7 +498,7 @@ docker push <harbor服务器地址>/<项目名>/<镜像名:版本>
     
     # 查看加载后的镜像（获取镜像名和标签）
     docker images
-   ``` 
+   ```
 2. 为镜像打标签（符合 Harbor 格式）
 
    按照 Harbor 仓库要求为镜像打标签，格式为：
@@ -384,7 +564,7 @@ docker push <harbor服务器地址>/<项目名>/<镜像名:版本>
     docker rmi "$HARBOR_IMAGE"
     
     echo "镜像上传完成！可在 Harbor 项目 $HARBOR_PROJECT 中查看"
-
+   
    ```
    使用方法：
    ```shell
@@ -404,7 +584,7 @@ docker push <harbor服务器地址>/<项目名>/<镜像名:版本>
       ```
       解决办法：
       * 修改 Docker 客户端配置
-     
+       
         在 Docker server 启动的时候，增加启动参数，默认使用 HTTP 访问。
         ```shell
            vim/usr/lib/systemd/system/docker.service
@@ -417,10 +597,38 @@ docker push <harbor服务器地址>/<项目名>/<镜像名:版本>
         ```shell
            systemctl daemon-reload
            systemctl restart docker
-          ```
+        ```
 ### 2、在 Web 界面管理镜像：
 上传完成后，可在 Harbor 网页端执行以下操作：
 * 查看镜像的标签、大小、创建时间等信息
 * 对镜像进行复制、删除、添加标签等操作
 * 配置镜像的生命周期规则（如自动清理旧版本）
 * 查看镜像的安全扫描报告（需启用 Trivy 等扫描工具）
+
+## 镜像拉取
+
+### 1、修改镜像仓库配置文件
+
+```shell
+vim /etc/docker/daemon.json
+# 修改如下内容
+{
+    # 新增你的仓库地址
+    "insecure-registries": ["192.168.1.100:9191"]
+ }
+```
+
+### 2、重启 docker
+
+```shell
+# 重启docker
+systemctl daemon-reload
+systemctl restart docker
+```
+
+### 3、在web界面复制拉取地址
+
+```shell
+docker pull 192.168.1.100:9191/common/mysql@sha256:ce327c13199b0f553b3f3f53f8f1eabd725e589ec4bd1a937095812288b33e24
+```
+
